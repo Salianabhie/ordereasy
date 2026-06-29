@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Restaurant rules
+    match /restaurants/{slug} {
+      // Anyone can read restaurant details (name, logo, cover, address, tax rate)
+      allow read: if true;
+      // All writes must go through the Next.js API routes (using Firebase Admin SDK)
+      allow write: if false;
+      
+      // Categories subcollection
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      // Menu Items subcollection
+      match /menuItems/{itemId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      // Customization Groups subcollection
+      match /customizationGroups/{groupId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      // Customization Options subcollection
+      match /customizationOptions/{optionId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      // Tables subcollection
+      match /tables/{tableId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      // Orders subcollection
+      match /orders/{orderId} {
+        // Needed for client-side real-time subscription on the dashboard
+        allow read: if true;
+        // Orders are created/updated via Next.js API routes
+        allow write: if false;
+      }
+      
+      // Metadata / counters subcollection
+      match /meta/{metaId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+  }
+}

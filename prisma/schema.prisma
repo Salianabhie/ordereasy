@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  coverUrl    String?
+  address     String?
+  phone       String?
+  currency    String   @default("USD")
+  taxRate     Float    @default(0.08)
+  plan        String   @default("pro")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categories Category[]
+  menuItems  MenuItem[]
+  tables     Table[]
+  orders     Order[]
+}
+
+model Table {
+  id           String     @id @default(cuid())
+  number       Int
+  qrCode       String     @unique
+  capacity     Int        @default(4)
+  status       String     @default("available")
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  orders Order[]
+
+  @@unique([restaurantId, number])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String
+  description  String?
+  imageUrl     String?
+  sortOrder    Int        @default(0)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+
+  @@unique([restaurantId, slug])
+}
+
+model MenuItem {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  imageUrl     String?
+  isAvailable  Boolean  @default(true)
+  isPopular    Boolean  @default(false)
+  prepTime     Int      @default(15)
+  sortOrder    Int      @default(0)
+  tags         String   @default("")
+  categoryId   String
+  restaurantId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  category            Category             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurant          Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customizationGroups CustomizationGroup[]
+  orderItems          OrderItem[]
+  upsellRules         UpsellRule[]         @relation("TriggerItem")
+  upsellTargets       UpsellRule[]         @relation("SuggestedItem")
+}
+
+model CustomizationGroup {
+  id         String              @id @default(cuid())
+  name       String
+  required   Boolean             @default(false)
+  maxSelect  Int                 @default(1)
+  menuItemId String
+  menuItem   MenuItem            @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  options    CustomizationOption[]
+}
+
+model CustomizationOption {
+  id      String             @id @default(cuid())
+  name    String
+  price   Float              @default(0)
+  groupId String
+  group   CustomizationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id           String     @id @default(cuid())
+  orderNumber  Int
+  status       String     @default("pending")
+  subtotal     Float
+  tax          Float
+  total        Float
+  notes        String?
+  paymentStatus String    @default("unpaid")
+  restaurantId String
+  tableId      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table      Table?     @relation(fields: [tableId], references: [id])
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id             String @id @default(cuid())
+  quantity       Int
+  unitPrice      Float
+  customizations String @default("[]")
+  notes          String?
+  orderId        String
+  menuItemId     String
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model UpsellRule {
+  id              String   @id @default(cuid())
+  triggerItemId   String
+  suggestedItemId String
+  message         String
+  discount        Float    @default(0)
+
+  triggerItem   MenuItem @relation("TriggerItem", fields: [triggerItemId], references: [id], onDelete: Cascade)
+  suggestedItem MenuItem @relation("SuggestedItem", fields: [suggestedItemId], references: [id], onDelete: Cascade)
+
+  @@unique([triggerItemId, suggestedItemId])
+}
