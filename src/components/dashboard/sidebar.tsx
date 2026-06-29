@@ -130,7 +130,9 @@ export function DashboardSidebar({
     <>
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 w-10 h-10 rounded-xl bg-[#0F0F0F] border border-white/5 flex items-center justify-center text-white shadow-xl"
+        className="lg:hidden fixed z-40 w-11 h-11 rounded-xl bg-[#0F0F0F] border border-white/5 flex items-center justify-center text-white shadow-xl touch-target press-scale"
+        style={{ top: "max(1rem, env(safe-area-inset-top))", left: "max(1rem, env(safe-area-inset-left))" }}
+        aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -152,15 +154,17 @@ export function DashboardSidebar({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-40"
+              transition={{ duration: 0.2 }}
+              className="lg:hidden fixed inset-0 bg-black/75 z-40"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 28 }}
-              className="lg:hidden fixed inset-y-0 left-0 w-64 bg-[#0F0F0F] border-r border-white/5 z-50 flex flex-col"
+              transition={{ type: "spring", damping: 32, stiffness: 400 }}
+              className="lg:hidden fixed inset-y-0 left-0 w-[min(280px,85vw)] bg-[#0F0F0F] border-r border-white/5 z-50 flex flex-col gpu-accelerate"
+              style={{ paddingTop: "env(safe-area-inset-top)" }}
             >
               <button
                 onClick={() => setMobileOpen(false)}

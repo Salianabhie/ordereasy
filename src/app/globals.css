@@ -26,6 +26,12 @@
   --color-cyber-surface-2: #141414;
   --color-cyber-surface-3: #1A1A1A;
   --color-cyber-accent: #E8FF00;
+
+  /* Safe area + fluid spacing */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -34,12 +40,138 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--color-cyber-bg);
   color: #ffffff;
   font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Viewport height that respects mobile browser chrome */
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Safe area padding utilities */
+.pt-safe { padding-top: max(0.75rem, var(--safe-top)); }
+.pb-safe { padding-bottom: max(0.75rem, var(--safe-bottom)); }
+.pl-safe { padding-left: max(1rem, var(--safe-left)); }
+.pr-safe { padding-right: max(1rem, var(--safe-right)); }
+.px-safe {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+.py-safe {
+  padding-top: max(0.75rem, var(--safe-top));
+  padding-bottom: max(0.75rem, var(--safe-bottom));
+}
+
+/* GPU-accelerated transforms for smooth 60fps animations */
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Touch-friendly minimum tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Premium mesh background */
+.bg-cyber-mesh {
+  background-color: #080808;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232, 255, 0, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(155, 126, 222, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(61, 214, 140, 0.03) 0%, transparent 50%);
+}
+
+/* Premium card with subtle gradient border */
+.card-premium {
+  background: linear-gradient(135deg, rgba(15, 15, 15, 0.95) 0%, rgba(20, 20, 20, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+.card-premium-accent {
+  border-color: rgba(232, 255, 0, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(232, 255, 0, 0.04) inset,
+    0 8px 40px -12px rgba(232, 255, 0, 0.08),
+    0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* Fluid typography */
+.text-fluid-hero {
+  font-size: clamp(2rem, 5vw + 1rem, 4.5rem);
+  line-height: 1.05;
+}
+
+.text-fluid-title {
+  font-size: clamp(1.5rem, 3vw + 0.5rem, 2.25rem);
+  line-height: 1.15;
+}
+
+.text-fluid-body {
+  font-size: clamp(0.875rem, 1vw + 0.5rem, 1.125rem);
+}
+
+/* Smooth native-feeling transitions */
+.transition-premium {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+/* Active press state for mobile */
+@media (hover: none) {
+  .press-scale:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Reduce motion for accessibility + performance */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-float,
+  .animate-wiggle {
+    animation: none !important;
+  }
+}
+
+/* Lighter glass on mobile for GPU performance */
+@media (max-width: 768px) {
+  .glass-cyber {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .glass-cyber-heavy {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+@media (min-width: 769px) {
+  .glass-cyber-heavy {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
 
 ::selection {
@@ -193,10 +325,11 @@ body {
 
 /* Cyber Luxury Utilities */
 .font-cyber-header {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 .font-cyber-data {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
 }
 .border-cyber {
   border: 1px solid rgba(255, 255, 255, 0.07);

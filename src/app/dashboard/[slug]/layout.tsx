@@ -31,10 +31,10 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex font-cyber-data">
+    <div className="min-h-screen-safe bg-[#080808] text-white flex font-cyber-data">
       <DashboardSidebar slug={slug} restaurantName={restaurantName} />
       <main className="flex-1 min-w-0">
-        <div className="p-6 lg:p-8 max-w-7xl">{children}</div>
+        <div className="pt-16 lg:pt-0 px-4 sm:px-6 lg:p-8 max-w-7xl">{children}</div>
       </main>
     </div>
   );

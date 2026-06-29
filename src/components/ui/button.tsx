@@ -5,38 +5,39 @@ import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
 
 interface ButtonProps extends HTMLMotionProps<"button"> {
-  variant?: "primary" | "secondary" | "ghost" | "outline" | "dark";
+  variant?: "primary" | "secondary" | "ghost" | "outline" | "dark" | "cyber";
   size?: "sm" | "md" | "lg";
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "md", children, ...props }, ref) => {
+  ({ className, variant = "cyber", size = "md", children, ...props }, ref) => {
     const variants = {
+      cyber:
+        "bg-[#E8FF00] text-black font-bold shadow-lg shadow-[#E8FF00]/15 hover:bg-[#E8FF00]/95 active:scale-[0.98]",
       primary:
-        "gradient-warm text-white shadow-lg shadow-[#FF6B4A]/30 hover:shadow-[#FF6B4A]/40 hover:brightness-105",
+        "bg-[#E8FF00] text-black font-bold shadow-lg shadow-[#E8FF00]/15 hover:bg-[#E8FF00]/95 active:scale-[0.98]",
       secondary:
-        "bg-[var(--color-espresso)] text-[var(--color-cream)] hover:bg-[#3D342F]",
+        "bg-[#141414] text-white border border-white/10 hover:border-white/20 hover:bg-[#1A1A1A]",
       dark:
-        "bg-[var(--color-surface-dark)] text-[var(--color-cream)] border border-white/8 hover:bg-[#2F2820]",
+        "bg-[#0F0F0F] text-white border border-white/8 hover:bg-[#141414]",
       ghost:
-        "bg-transparent text-[var(--color-espresso-muted)] hover:text-[var(--color-espresso)] hover:bg-[var(--color-espresso)]/5",
+        "bg-transparent text-white/70 hover:text-white hover:bg-white/5",
       outline:
-        "border-2 border-[var(--color-border-warm)] text-[var(--color-espresso)] hover:border-[var(--color-coral)] hover:bg-[var(--color-coral)]/5",
+        "border border-white/10 text-white hover:border-[#E8FF00]/30 hover:bg-[#E8FF00]/5",
     };
 
     const sizes = {
-      sm: "px-3.5 py-2 text-sm rounded-full",
-      md: "px-6 py-2.5 text-sm rounded-full",
-      lg: "px-8 py-3.5 text-base rounded-full font-semibold",
+      sm: "px-3.5 py-2 text-sm rounded-xl min-h-[36px]",
+      md: "px-6 py-2.5 text-sm rounded-xl min-h-[44px]",
+      lg: "px-8 py-3.5 text-base rounded-xl font-semibold min-h-[52px]",
     };
 
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.03, y: -1 }}
         whileTap={{ scale: 0.97 }}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]/40 disabled:opacity-50 disabled:pointer-events-none",
+          "inline-flex items-center justify-center gap-2 font-medium transition-premium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8FF00]/40 disabled:opacity-50 disabled:pointer-events-none touch-target",
           variants[variant],
           sizes[size],
           className

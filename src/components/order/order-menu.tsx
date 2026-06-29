@@ -154,15 +154,17 @@ function ItemModal({ item, slug, onClose }: ItemModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
     >
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 350 }}
-        className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-[#0F0F0F] text-white border border-white/5 shadow-2xl"
+        transition={{ type: "spring", damping: 32, stiffness: 420 }}
+        className="relative w-full max-w-lg max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto rounded-t-[1.75rem] sm:rounded-3xl bg-[#0F0F0F] text-white border border-white/5 shadow-2xl gpu-accelerate overscroll-contain"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {item.imageUrl && (
           <div className="relative h-64 w-full overflow-hidden">
@@ -476,9 +478,9 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
   const standardItems = activeItems.filter((i) => !i.isPopular);
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white pb-32 font-sans">
-      {/* Premium Parallax Cover Header */}
-      <div className="relative h-64 bg-[#0F0F0F] overflow-hidden border-b border-white/5 shadow-md">
+    <div className="min-h-screen-safe bg-cyber-mesh text-white font-sans">
+      {/* Cover Header */}
+      <div className="relative h-48 sm:h-56 md:h-64 bg-[#0F0F0F] overflow-hidden border-b border-white/5">
         {restaurant.coverUrl && (
           <Image
             src={restaurant.coverUrl}
@@ -491,15 +493,18 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/40 to-black/60" />
         
-        {/* Floating Table Badge */}
-        <div className="absolute top-5 right-5 z-20 glass-cyber rounded-xl px-4.5 py-2 border border-[#E8FF00]/20 text-[10px] font-bold text-[#E8FF00] tracking-widest uppercase shadow-lg shadow-black/50 font-cyber-header">
+        {/* Table Badge */}
+        <div
+          className="absolute z-20 glass-cyber rounded-xl px-3.5 sm:px-4.5 py-2 border border-[#E8FF00]/20 text-[10px] font-bold text-[#E8FF00] tracking-widest uppercase font-cyber-header"
+          style={{ top: "max(1rem, env(safe-area-inset-top))", right: "max(1rem, env(safe-area-inset-right))" }}
+        >
           Table {tableNumber}
         </div>
 
-        <div className="absolute bottom-0 inset-x-0 p-6 z-10 flex flex-col justify-end">
-          <div className="flex items-center gap-4">
+        <div className="absolute bottom-0 inset-x-0 px-4 sm:p-6 z-10 flex flex-col justify-end pb-4 sm:pb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
             {restaurant.logoUrl && (
-              <div className="relative w-18 h-18 rounded-2xl overflow-hidden border-2 border-[#E8FF00] shrink-0 shadow-lg shadow-[#E8FF00]/5 bg-[#080808]">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-2xl overflow-hidden border-2 border-[#E8FF00] shrink-0 shadow-lg shadow-[#E8FF00]/5 bg-[#080808]">
                 <Image
                   src={restaurant.logoUrl}
                   alt=""
@@ -510,12 +515,16 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowInfo(!showInfo)}>
-                <h1 className="text-3xl font-extrabold text-white tracking-tight font-cyber-header text-cyber-glow">
+              <button
+                type="button"
+                className="flex items-center gap-2 w-full text-left touch-target"
+                onClick={() => setShowInfo(!showInfo)}
+              >
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight font-cyber-header text-cyber-glow truncate">
                   {restaurant.name}
                 </h1>
-                <ChevronDown className={`w-5 h-5 text-[#E8FF00] transition-transform duration-300 ${showInfo ? "rotate-180" : ""}`} />
-              </div>
+                <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-[#E8FF00] shrink-0 transition-transform duration-200 ${showInfo ? "rotate-180" : ""}`} />
+              </button>
               <p className="text-white/60 text-xs font-light mt-1 flex items-center gap-1 font-cyber-data">
                 <MapPin className="w-3.5 h-3.5 text-[#E8FF00]" /> Modern QR Dining
               </p>
@@ -624,25 +633,23 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
       </AnimatePresence>
 
       {/* Sticky Categories Bar */}
-      <div className="sticky top-0 z-30 glass-cyber border-x-0 border-t-0 border-b border-white/5 py-3.5 shadow-md">
-        <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar max-w-3xl mx-auto">
+      <div
+        className="sticky z-30 glass-cyber border-x-0 border-t-0 border-b border-white/5 py-3 shadow-sm gpu-accelerate"
+        style={{ top: 0 }}
+      >
+        <div className="flex gap-2 sm:gap-3 px-4 overflow-x-auto no-scrollbar max-w-3xl mx-auto scroll-smooth snap-x snap-mandatory">
           {restaurant.categories.map((cat) => {
             const isActive = activeCategory === cat.slug;
             return (
               <button
                 key={cat.slug}
                 onClick={() => setActiveCategory(cat.slug)}
-                className={`relative shrink-0 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                  isActive ? "text-black" : "text-white/60 hover:text-white hover:bg-white/5"
+                className={`relative shrink-0 snap-start px-4 sm:px-5 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-premium touch-target min-h-[40px] ${
+                  isActive
+                    ? "bg-[#E8FF00] text-black shadow-md shadow-[#E8FF00]/20"
+                    : "text-white/60 hover:text-white bg-white/[0.03] hover:bg-white/5"
                 }`}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeCategoryBg"
-                    className="absolute inset-0 bg-[#E8FF00] rounded-xl -z-10"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
                 {cat.name}
               </button>
             );
@@ -650,16 +657,8 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeCategory}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-8"
-          >
+      <div className="max-w-3xl mx-auto px-4 py-5 sm:py-6 space-y-6 sm:space-y-8 pb-28 sm:pb-32">
+          <div className="space-y-6 sm:space-y-8">
             {/* Chef's Specials (Featured Section) */}
             {featuredItems.length > 0 && (
               <div>
@@ -667,13 +666,13 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                   <Star className="w-3.5 h-3.5 fill-[#E8FF00] text-[#E8FF00]" />
                   Chef&apos;s Selections
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {featuredItems.map((item) => (
-                    <motion.button
+                    <button
                       key={item.id}
-                      whileTap={{ scale: 0.98 }}
+                      type="button"
                       onClick={() => setSelectedItem(item)}
-                      className="group w-full relative bg-[#0F0F0F] rounded-3xl border border-white/5 p-4.5 hover:border-[#E8FF00]/20 transition-all duration-300 shadow-xl hover:shadow-black/60 flex flex-col justify-between h-[280px] overflow-hidden text-left"
+                      className="group w-full relative card-premium rounded-2xl sm:rounded-3xl p-4 sm:p-4.5 hover:border-[#E8FF00]/20 transition-premium flex flex-col justify-between min-h-[220px] sm:min-h-[260px] overflow-hidden text-left press-scale"
                     >
                       {item.imageUrl && (
                         <div className="absolute inset-0 pointer-events-none">
@@ -681,7 +680,7 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                             src={item.imageUrl}
                             alt=""
                             fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-20 filter blur-[0.5px]"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-25 sm:opacity-20"
                             sizes="380px"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/85 to-transparent" />
@@ -700,7 +699,7 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
 
                       {/* Bottom content */}
                       <div className="relative z-10 mt-auto">
-                        <h3 className="text-xl font-bold font-cyber-header text-white group-hover:text-[#E8FF00] transition-colors">
+                        <h3 className="text-lg sm:text-xl font-bold font-cyber-header text-white group-hover:text-[#E8FF00] transition-colors line-clamp-2">
                           {item.name}
                         </h3>
                         {item.description && (
@@ -709,7 +708,7 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                           </p>
                         )}
                       </div>
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -720,16 +719,16 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
               <h2 className="text-xs tracking-[0.2em] font-bold text-white/40 uppercase mb-4.5 font-cyber-header">
                 A La Carte Selection
               </h2>
-              <div className="grid grid-cols-1 gap-3.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:gap-3.5">
                 {standardItems.map((item) => (
-                  <motion.button
+                  <button
                     key={item.id}
-                    whileTap={{ scale: 0.98 }}
+                    type="button"
                     onClick={() => setSelectedItem(item)}
-                    className="w-full flex gap-4 p-4 bg-[#0F0F0F] rounded-2xl border border-white/5 hover:border-[#E8FF00]/20 transition-all duration-300 shadow-md hover:shadow-black/40 items-center text-left"
+                    className="w-full flex gap-3 sm:gap-4 p-3.5 sm:p-4 card-premium rounded-xl sm:rounded-2xl hover:border-[#E8FF00]/20 transition-premium items-center text-left press-scale"
                   >
                     {item.imageUrl && (
-                      <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 border border-white/5 shadow-inner">
+                      <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 border border-white/5">
                         <Image
                           src={item.imageUrl}
                           alt={item.name}
@@ -740,7 +739,7 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base md:text-lg text-white font-cyber-header">
+                      <h3 className="font-bold text-[15px] sm:text-base md:text-lg text-white font-cyber-header line-clamp-1">
                         {item.name}
                       </h3>
                       {item.description && (
@@ -752,33 +751,35 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                         {formatCurrency(item.price)}
                       </div>
                     </div>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
 
             {activeItems.length === 0 && (
-              <div className="text-center py-20 text-white/30">
-                <ChefHat className="w-12 h-12 mx-auto mb-3 opacity-25 animate-pulse" />
+              <div className="text-center py-16 sm:py-20 text-white/30">
+                <ChefHat className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 opacity-25" />
                 <p className="text-sm font-light font-cyber-data">No creations available in this category yet</p>
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
 
-      {/* Sticky Premium Cart Button */}
+      {/* Sticky Cart Bar */}
       <AnimatePresence>
         {itemCount() > 0 && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-0 inset-x-0 p-4 z-40"
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 400 }}
+            className="fixed bottom-0 inset-x-0 z-40 px-4 gpu-accelerate"
+            style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
           >
             <button
+              type="button"
               onClick={() => setShowCart(true)}
-              className="w-full max-w-lg mx-auto flex items-center justify-between px-6 py-4 rounded-xl bg-[#E8FF00] hover:bg-[#E8FF00]/95 text-black shadow-2xl shadow-[#E8FF00]/15 border border-white/5 active:scale-98 transition-all font-cyber-data"
+              className="w-full max-w-lg mx-auto flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-[#E8FF00] active:bg-[#E8FF00]/90 text-black shadow-2xl shadow-[#E8FF00]/20 border border-white/5 transition-premium font-cyber-data touch-target press-scale"
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -895,15 +896,17 @@ function CartSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-end justify-center p-0"
     >
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/85" onClick={onClose} />
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 350 }}
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl bg-[#0F0F0F] border-t border-white/5 shadow-2xl text-white"
+        transition={{ type: "spring", damping: 32, stiffness: 420 }}
+        className="relative w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-t-[1.75rem] bg-[#0F0F0F] border-t border-white/5 shadow-2xl text-white gpu-accelerate overscroll-contain"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {orderPlaced ? (
           <div className="p-12 text-center">
