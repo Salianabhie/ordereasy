@@ -19,7 +19,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Star, X, FolderPlus } from "lucide-react";
+import { GripVertical, Plus, Star, X, FolderPlus, Trash2, Edit2 } from "lucide-react";
+import { MenuScanner } from "./menu-scanner";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +94,7 @@ function TiltCard({
   );
 }
 
-function SortableItem({ item }: { item: MenuItem }) {
+function SortableItem({ item, onDelete, onEdit }: { item: MenuItem; onDelete: (item: MenuItem) => void; onEdit: (item: MenuItem) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -147,6 +148,22 @@ function SortableItem({ item }: { item: MenuItem }) {
             item.isAvailable ? "bg-[#E8FF00]" : "bg-red-500"
           }`}
         />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEdit(item)}
+            className="text-white/20 hover:text-[#E8FF00] transition-colors p-1.5 hover:bg-[#E8FF00]/10 rounded-lg"
+            title="Edit item"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(item)}
+            className="text-white/20 hover:text-red-500 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg"
+            title="Remove item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </TiltCard>
   );
@@ -161,6 +178,10 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
   // Modals visibility
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
+  const [itemToEdit, setItemToEdit] = useState<MenuItem | null>(null);
 
   // Forms state
   const [categoryForm, setCategoryForm] = useState({ name: "", slug: "" });
@@ -170,6 +191,12 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
     price: "",
     imageUrl: "",
     categoryId: activeCategory,
+  });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    imageUrl: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -321,6 +348,106 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
     }
   };
 
+  const handleDeleteMenuItem = async (item: MenuItem) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const res = await fetch(`/api/restaurants/${slug}/menu?id=${itemToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete menu item");
+      }
+
+      setCategories((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          menuItems: cat.menuItems.filter((item) => item.id !== itemToDelete.id),
+        }))
+      );
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    } catch (err: unknown) {
+      console.error(err);
+      alert("Failed to delete menu item");
+    }
+  };
+
+  const handleEditMenuItem = (item: MenuItem) => {
+    setItemToEdit(item);
+    setEditForm({
+      name: item.name,
+      description: item.description || "",
+      price: item.price.toString(),
+      imageUrl: item.imageUrl || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateMenuItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!itemToEdit) return;
+
+    setFormError(null);
+    setIsLoading(true);
+
+    try {
+      const parsedPrice = parseFloat(editForm.price);
+      if (isNaN(parsedPrice)) {
+        setFormError("Price must be a valid number");
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await fetch(`/api/restaurants/${slug}/menu/${itemToEdit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name,
+          description: editForm.description || undefined,
+          price: parsedPrice,
+          imageUrl: editForm.imageUrl || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update menu item");
+      }
+
+      setCategories((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          menuItems: cat.menuItems.map((item) =>
+            item.id === itemToEdit.id
+              ? {
+                  ...item,
+                  name: editForm.name,
+                  description: editForm.description || null,
+                  price: parsedPrice,
+                  imageUrl: editForm.imageUrl || null,
+                }
+              : item
+          ),
+        }))
+      );
+
+      setShowEditModal(false);
+      setItemToEdit(null);
+      setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+    } catch (err: unknown) {
+      console.error(err);
+      setFormError(err instanceof Error ? err.message : "Failed to update menu item");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -333,6 +460,14 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <MenuScanner 
+            slug={slug} 
+            categories={categories} 
+            onItemsAdded={(items) => {
+              // Refresh categories after adding items
+              window.location.reload();
+            }} 
+          />
           <Button variant="dark" size="sm" className="border border-white/10 hover:border-[#E8FF00]/30 transition-all text-xs" onClick={() => setShowCategoryModal(true)}>
             <FolderPlus className="w-4 h-4" />
             Add Category
@@ -410,7 +545,7 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ type: "spring", stiffness: 400, damping: 30, delay: i * 0.03 }}
                     >
-                      <SortableItem item={item} />
+                      <SortableItem item={item} onDelete={handleDeleteMenuItem} onEdit={handleEditMenuItem} />
                     </motion.div>
                   ))}
                   {items.length === 0 && (
@@ -626,6 +761,185 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
                     Cancel
                   </button>
                   <Button type="submit">Add to Menu</Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && itemToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setItemToDelete(null);
+              }}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#0F0F0F] border border-white/10 rounded-[2rem] p-8 z-10"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold font-cyber-header text-white">Remove Menu Item</h3>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setItemToDelete(null);
+                  }}
+                  className="text-white/40 hover:text-white/70"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-white/70 text-sm mb-2">
+                  Are you sure you want to remove <span className="text-white font-semibold">{itemToDelete.name}</span>?
+                </p>
+                <p className="text-white/40 text-xs">This action cannot be undone.</p>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setItemToDelete(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white/45 hover:text-white/70"
+                >
+                  Cancel
+                </button>
+                <Button
+                  onClick={confirmDelete}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Remove Item
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Menu Item Modal */}
+      <AnimatePresence>
+        {showEditModal && itemToEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => {
+                setShowEditModal(false);
+                setItemToEdit(null);
+                setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+              }}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#0F0F0F] border border-white/10 rounded-[2rem] p-8 z-10"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold font-cyber-header text-white">Edit Menu Item</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setItemToEdit(null);
+                    setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+                  }}
+                  className="text-white/40 hover:text-white/70"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {formError && (
+                <div className="mb-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs">
+                  {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleUpdateMenuItem} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                    Item Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="E.g., Chocolate Cake"
+                    className="w-full px-4.5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-[#E8FF00] text-sm text-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                    Description
+                  </label>
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Brief description of the item"
+                    rows={3}
+                    className="w-full px-4.5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-[#E8FF00] text-sm text-white resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    step="0.01"
+                    min="0"
+                    value={editForm.price}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-4.5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-[#E8FF00] text-sm text-white font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+                    Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editForm.imageUrl}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                    placeholder="https://..."
+                    className="w-full px-4.5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-[#E8FF00] text-sm text-white"
+                  />
+                </div>
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setItemToEdit(null);
+                      setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white/45 hover:text-white/70"
+                  >
+                    Cancel
+                  </button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? "Saving..." : "Save Changes"}
+                  </Button>
                 </div>
               </form>
             </motion.div>

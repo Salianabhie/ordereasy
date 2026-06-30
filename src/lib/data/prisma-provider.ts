@@ -35,10 +35,10 @@ export async function getRestaurantBySlug(
 
 export async function getRestaurantForDashboard(
   slug: string
-): Promise<{ name: string; slug: string } | null> {
+): Promise<{ name: string; slug: string; password: string | null } | null> {
   const r = await prisma.restaurant.findUnique({
     where: { slug },
-    select: { name: true, slug: true },
+    select: { name: true, slug: true, password: true },
   });
   return r;
 }
@@ -307,6 +307,7 @@ export async function createRestaurant(data: {
   coverUrl?: string;
   address?: string;
   phone?: string;
+  password?: string;
 }) {
   const restaurant = await prisma.restaurant.create({
     data: {
@@ -317,6 +318,7 @@ export async function createRestaurant(data: {
       coverUrl: data.coverUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80",
       address: data.address,
       phone: data.phone,
+      password: data.password,
       taxRate: 0.0875,
       plan: "pro",
       tables: {

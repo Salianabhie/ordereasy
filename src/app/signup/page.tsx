@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChefHat, ArrowRight, Store, MapPin, Phone, FileText, Globe, AlertCircle } from "lucide-react";
+import { ChefHat, ArrowRight, Store, MapPin, Phone, FileText, Globe, AlertCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const IMAGE_PRESETS = [
@@ -38,6 +38,7 @@ export default function SignupPage() {
     description: "",
     address: "",
     phone: "",
+    password: "",
     coverUrl: IMAGE_PRESETS[0].url,
   });
 
@@ -60,6 +61,12 @@ export default function SignupPage() {
 
     if (!formData.name.trim() || !formData.slug.trim()) {
       setError("Restaurant name and URL slug are required.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      setError("Password is required for dashboard access.");
       setIsLoading(false);
       return;
     }
@@ -212,6 +219,21 @@ export default function SignupPage() {
                 className="w-full px-4.5 py-3 rounded-xl bg-[#141414] border border-white/5 focus:outline-none focus:border-[#E8FF00] focus:ring-1 focus:ring-[#E8FF00]/25 transition-all text-sm text-white placeholder-white/20 font-cyber-data"
               />
             </div>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5 font-cyber-header">
+              <Lock className="w-3.5 h-3.5 text-[#E8FF00]" /> Dashboard Password
+            </label>
+            <input
+              type="password"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+              placeholder="Create a password for dashboard access"
+              className="w-full px-4.5 py-3 rounded-xl bg-[#141414] border border-white/5 focus:outline-none focus:border-[#E8FF00] focus:ring-1 focus:ring-[#E8FF00]/25 transition-all text-sm text-white placeholder-white/20 font-cyber-data"
+            />
           </div>
 
           {/* Cover Image Preset */}

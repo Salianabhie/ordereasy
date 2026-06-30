@@ -32,6 +32,8 @@ interface CartStore {
   setContext: (slug: string, table: number) => void;
   total: () => number;
   itemCount: () => number;
+  getItemQuantity: (menuItemId: string) => number;
+  getItemCartId: (menuItemId: string) => string | null;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -86,6 +88,16 @@ export const useCartStore = create<CartStore>()(
 
       itemCount: () =>
         get().items.reduce((sum, item) => sum + item.quantity, 0),
+
+      getItemQuantity: (menuItemId) =>
+        get().items
+          .filter((item) => item.menuItemId === menuItemId)
+          .reduce((sum, item) => sum + item.quantity, 0),
+
+      getItemCartId: (menuItemId) => {
+        const item = get().items.find((i) => i.menuItemId === menuItemId);
+        return item?.cartId || null;
+      },
     }),
     { name: "ordereasy-cart" }
   )

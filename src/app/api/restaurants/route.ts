@@ -4,11 +4,18 @@ import { getRestaurantBySlug, createRestaurant } from "@/lib/data";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, slug, description, address, phone, logoUrl, coverUrl } = body;
+    const { name, slug, description, address, phone, logoUrl, coverUrl, password } = body;
 
     if (!name || !slug) {
       return NextResponse.json(
         { error: "Restaurant name and URL slug are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { error: "Password is required for dashboard access" },
         { status: 400 }
       );
     }
@@ -33,6 +40,7 @@ export async function POST(request: NextRequest) {
       phone: phone || undefined,
       logoUrl: logoUrl || undefined,
       coverUrl: coverUrl || undefined,
+      password: password || undefined,
     });
 
     return NextResponse.json({ success: true, restaurant }, { status: 201 });

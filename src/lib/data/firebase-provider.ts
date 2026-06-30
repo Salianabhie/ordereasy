@@ -109,7 +109,7 @@ export async function getRestaurantForDashboard(slug: string) {
   const doc = await restaurantRef(slug).get();
   if (!doc.exists) return null;
   const data = doc.data()!;
-  return { name: data.name as string, slug };
+  return { name: data.name as string, slug, password: data.password as string | null };
 }
 
 export async function getMenuCategories(slug: string) {
@@ -417,6 +417,7 @@ export async function createRestaurant(data: {
   coverUrl?: string;
   address?: string;
   phone?: string;
+  password?: string;
 }) {
   const docRef = restaurantRef(data.slug);
   const now = new Date();
@@ -428,6 +429,7 @@ export async function createRestaurant(data: {
     coverUrl: data.coverUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80",
     address: data.address || null,
     phone: data.phone || null,
+    password: data.password || null,
     currency: "USD",
     taxRate: 0.0875,
     plan: "pro",

@@ -17,6 +17,7 @@ import {
   ChefHat,
   Utensils,
   Check,
+  Trash2,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/utils";
@@ -382,7 +383,7 @@ function ItemModal({ item, slug, onClose }: ItemModalProps) {
                   </div>
                   <Button
                     onClick={handleAdd}
-                    className="flex-1 !py-6 bg-[#E8FF00] hover:bg-[#E8FF00]/95 !text-black font-bold uppercase tracking-wider text-sm shadow-xl shadow-[#E8FF00]/10 rounded-xl font-cyber-data"
+                    className="flex-1 !py-3.5 bg-[#E8FF00] hover:bg-[#E8FF00]/95 !text-black font-bold uppercase tracking-wider text-xs shadow-xl shadow-[#E8FF00]/10 rounded-xl font-cyber-data"
                   >
                     Add to order · {formatCurrency(itemTotal)}
                   </Button>
@@ -413,12 +414,12 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
     restaurant.categories[0]?.slug ?? ""
   );
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const { total, itemCount, setContext } = useCartStore();
+  const { total, itemCount, setContext, getItemQuantity, getItemCartId, updateQuantity, addItem } = useCartStore();
   const [showCart, setShowCart] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [activeOrder, setActiveOrder] = useState<PlacedOrderTracker | null>(() => {
-    if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(`active_order_${restaurant.slug}`);
+  const [activeOrders, setActiveOrders] = useState<PlacedOrderTracker[]>(() => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(`active_orders_${restaurant.slug}`);
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -426,39 +427,44 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
         console.error(e);
       }
     }
-    return null;
+    return [];
   });
 
   useEffect(() => {
     setContext(restaurant.slug, tableNumber);
   }, [restaurant.slug, tableNumber, setContext]);
 
-  // Poll order status if there is an active order
+  // Poll order status for active orders
   useEffect(() => {
-    if (!activeOrder) return;
+    if (activeOrders.length === 0) return;
     
     const checkStatus = async () => {
       try {
         const res = await fetch(`/api/restaurants/${restaurant.slug}/orders`);
         if (!res.ok) return;
         const orders = (await res.json()) as { id: string; status: string }[];
-        const matching = orders.find((o) => o.id === activeOrder.id);
         
-        if (matching) {
-          if (matching.status !== activeOrder.status) {
-            const updated = { ...activeOrder, status: matching.status };
-            setActiveOrder(updated);
-            localStorage.setItem(`active_order_${restaurant.slug}`, JSON.stringify(updated));
+        const updatedOrders = activeOrders.map(activeOrder => {
+          const matching = orders.find((o) => o.id === activeOrder.id);
+          if (matching && matching.status !== activeOrder.status) {
+            return { ...activeOrder, status: matching.status };
           }
-          
-          if (["completed", "cancelled"].includes(matching.status)) {
-            // Remove from active tracking after some time
-            setTimeout(() => {
-              setActiveOrder(null);
-              localStorage.removeItem(`active_order_${restaurant.slug}`);
-            }, 6000);
-          }
+          return activeOrder;
+        });
+        
+        // Remove completed/cancelled orders after delay
+        const toRemove = updatedOrders.filter(o => ["completed", "cancelled"].includes(o.status));
+        if (toRemove.length > 0) {
+          setTimeout(() => {
+            setActiveOrders(prev => prev.filter(o => !toRemove.find(r => r.id === o.id)));
+            localStorage.setItem(`active_orders_${restaurant.slug}`, JSON.stringify(
+              updatedOrders.filter(o => !toRemove.find(r => r.id === o.id))
+            ));
+          }, 6000);
         }
+        
+        setActiveOrders(updatedOrders);
+        localStorage.setItem(`active_orders_${restaurant.slug}`, JSON.stringify(updatedOrders));
       } catch (err) {
         console.error(err);
       }
@@ -467,7 +473,7 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
     checkStatus();
     const interval = setInterval(checkStatus, 5000);
     return () => clearInterval(interval);
-  }, [activeOrder, restaurant.slug]);
+  }, [activeOrders, restaurant.slug]);
 
   const activeItems =
     restaurant.categories.find((c) => c.slug === activeCategory)?.menuItems ??
@@ -575,62 +581,62 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
         )}
       </AnimatePresence>
 
-      {/* Active Placed Order Tracker */}
-      <AnimatePresence>
-        {activeOrder && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="px-4 pt-4 max-w-2xl mx-auto"
-          >
-            <div className="bg-[#0F0F0F] border border-white/10 rounded-2xl p-4 shadow-xl shadow-black/80 text-white">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2">
-                  <ChefHat className="w-5 h-5 text-[#E8FF00]" />
-                  <span className="font-bold font-cyber-header text-sm">Active Order #{activeOrder.orderNumber}</span>
-                </div>
-                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-lg border ${
-                  activeOrder.status === "pending"
-                    ? "border-amber-400 text-amber-400 bg-amber-400/5"
-                    : activeOrder.status === "preparing"
-                    ? "border-cyan-400 text-cyan-400 bg-cyan-400/5"
-                    : activeOrder.status === "ready"
-                    ? "border-[#E8FF00] text-[#E8FF00] bg-[#E8FF00]/5"
-                    : "border-white/10 text-white/30 bg-white/5"
-                }`}>
-                  {activeOrder.status === "pending" && "Pending Confirmation"}
-                  {activeOrder.status === "preparing" && "Cooking in Kitchen"}
-                  {activeOrder.status === "ready" && "Ready to Serve!"}
-                  {activeOrder.status === "completed" && "Completed!"}
-                </span>
-              </div>
-              
-              {/* Process Line Tracker */}
-              <div className="flex items-center justify-between gap-1 mt-4 px-2">
-                {[
-                  { step: "Sent", active: true },
-                  { step: "Cooking", active: ["preparing", "ready", "completed"].includes(activeOrder.status) },
-                  { step: "Ready", active: ["ready", "completed"].includes(activeOrder.status) },
-                  { step: "Served", active: activeOrder.status === "completed" },
-                ].map((s, idx, arr) => (
-                  <div key={s.step} className="flex-1 flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold ${s.active ? "bg-[#E8FF00] text-black border-[#E8FF00]" : "border-white/10 bg-white/5 text-white/30"}`}>
-                        {idx + 1}
-                      </div>
-                      <span className="text-[10px] mt-1 font-light text-white/45 font-cyber-data">{s.step}</span>
+      {/* Active Placed Order Trackers */}
+      {activeOrders.length > 0 && (
+        <div className="px-4 pt-4 max-w-2xl mx-auto">
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+              {activeOrders.map((activeOrder) => (
+                <div
+                  key={activeOrder.id}
+                  className="bg-[#0F0F0F] border border-white/10 rounded-2xl p-4 shadow-xl shadow-black/80 text-white min-w-[280px] snap-center flex-shrink-0"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <ChefHat className="w-5 h-5 text-[#E8FF00]" />
+                      <span className="font-bold font-cyber-header text-sm">Order #{activeOrder.orderNumber}</span>
                     </div>
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-lg border ${
+                      activeOrder.status === "pending"
+                        ? "border-amber-400 text-amber-400 bg-amber-400/5"
+                        : activeOrder.status === "preparing"
+                        ? "border-cyan-400 text-cyan-400 bg-cyan-400/5"
+                        : activeOrder.status === "ready"
+                        ? "border-[#E8FF00] text-[#E8FF00] bg-[#E8FF00]/5"
+                        : "border-white/10 text-white/30 bg-white/5"
+                    }`}>
+                      {activeOrder.status === "pending" && "Pending"}
+                      {activeOrder.status === "preparing" && "Cooking"}
+                      {activeOrder.status === "ready" && "Ready"}
+                      {activeOrder.status === "completed" && "Done"}
+                    </span>
+                  </div>
+                  
+                  {/* Process Line Tracker */}
+                  <div className="flex items-center justify-between gap-1 mt-4 px-2">
+                    {[
+                      { step: "Sent", active: true },
+                      { step: "Cooking", active: ["preparing", "ready", "completed"].includes(activeOrder.status) },
+                      { step: "Ready", active: ["ready", "completed"].includes(activeOrder.status) },
+                      { step: "Served", active: activeOrder.status === "completed" },
+                    ].map((s, idx, arr) => (
+                      <div key={s.step} className="flex-1 flex items-center">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold ${s.active ? "bg-[#E8FF00] text-black border-[#E8FF00]" : "border-white/10 bg-white/5 text-white/30"}`}>
+                            {idx + 1}
+                          </div>
+                          <span className="text-[10px] mt-1 font-light text-white/45 font-cyber-data">{s.step}</span>
+                        </div>
                     {idx < arr.length - 1 && (
                       <div className={`flex-1 h-0.5 -mt-3.5 mx-2 rounded ${arr[idx+1].active ? "bg-[#E8FF00]" : "bg-white/5"}`} />
                     )}
                   </div>
                 ))}
               </div>
+                </div>
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Sticky Categories Bar */}
       <div
@@ -667,49 +673,125 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                   Chef&apos;s Selections
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {featuredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSelectedItem(item)}
-                      className="group w-full relative card-premium rounded-2xl sm:rounded-3xl p-4 sm:p-4.5 hover:border-[#E8FF00]/20 transition-premium flex flex-col justify-between min-h-[220px] sm:min-h-[260px] overflow-hidden text-left press-scale"
-                    >
-                      {item.imageUrl && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <Image
-                            src={item.imageUrl}
-                            alt=""
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-25 sm:opacity-20"
-                            sizes="380px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/85 to-transparent" />
-                        </div>
-                      )}
-                      
-                      {/* Top metadata */}
-                      <div className="relative z-10 flex justify-between items-start w-full">
-                        <span className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E8FF00] text-black text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
-                          Signature
-                        </span>
-                        <span className="glass-cyber text-[#E8FF00] font-bold text-xs px-3 py-1.5 rounded-xl border border-white/5 font-cyber-data shadow">
-                          {formatCurrency(item.price)}
-                        </span>
-                      </div>
+                  {featuredItems.map((item) => {
+                    const itemQuantity = getItemQuantity(item.id);
+                    const itemCartId = getItemCartId(item.id);
+                    
+                    if (itemQuantity > 0) {
+                      return (
+                        <div
+                          key={item.id}
+                          className="group w-full relative card-premium rounded-2xl sm:rounded-3xl p-4 sm:p-4.5 border-[#E8FF00]/30 bg-[#E8FF00]/5 flex flex-col justify-between min-h-[220px] sm:min-h-[260px] overflow-hidden"
+                        >
+                          {item.imageUrl && (
+                            <div className="absolute inset-0 pointer-events-none">
+                              <Image
+                                src={item.imageUrl}
+                                alt=""
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-25 sm:opacity-20"
+                                sizes="380px"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/85 to-transparent" />
+                            </div>
+                          )}
+                          
+                          {/* Top metadata */}
+                          <div className="relative z-10 flex justify-between items-start w-full">
+                            <span className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E8FF00] text-black text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
+                              Signature
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity - 1);
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-lg bg-[#141414] border border-white/5 flex items-center justify-center hover:border-white/15 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="text-lg font-bold w-6 text-center font-cyber-header text-[#E8FF00]">
+                                {itemQuantity}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity + 1);
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-lg bg-[#141414] border border-white/5 flex items-center justify-center hover:border-white/15 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
 
-                      {/* Bottom content */}
-                      <div className="relative z-10 mt-auto">
-                        <h3 className="text-lg sm:text-xl font-bold font-cyber-header text-white group-hover:text-[#E8FF00] transition-colors line-clamp-2">
-                          {item.name}
-                        </h3>
-                        {item.description && (
-                          <p className="text-white/50 text-xs mt-1.5 line-clamp-2 leading-relaxed font-light font-cyber-data">
-                            {item.description}
-                          </p>
+                          {/* Bottom content */}
+                          <div className="relative z-10 mt-auto">
+                            <h3 className="text-lg sm:text-xl font-bold font-cyber-header text-white group-hover:text-[#E8FF00] transition-colors line-clamp-2">
+                              {item.name}
+                            </h3>
+                            {item.description && (
+                              <p className="text-white/50 text-xs mt-1.5 line-clamp-2 leading-relaxed font-light font-cyber-data">
+                                {item.description}
+                              </p>
+                            )}
+                            <div className="mt-2.5 font-extrabold text-sm text-[#E8FF00] font-cyber-data">
+                              {formatCurrency(item.price * itemQuantity)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSelectedItem(item)}
+                        className="group w-full relative card-premium rounded-2xl sm:rounded-3xl p-4 sm:p-4.5 hover:border-[#E8FF00]/20 transition-premium flex flex-col justify-between min-h-[220px] sm:min-h-[260px] overflow-hidden text-left press-scale"
+                      >
+                        {item.imageUrl && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            <Image
+                              src={item.imageUrl}
+                              alt=""
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-25 sm:opacity-20"
+                              sizes="380px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/85 to-transparent" />
+                          </div>
                         )}
-                      </div>
-                    </button>
-                  ))}
+                        
+                        {/* Top metadata */}
+                        <div className="relative z-10 flex justify-between items-start w-full">
+                          <span className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E8FF00] text-black text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
+                            Signature
+                          </span>
+                          <span className="glass-cyber text-[#E8FF00] font-bold text-xs px-3 py-1.5 rounded-xl border border-white/5 font-cyber-data shadow">
+                            {formatCurrency(item.price)}
+                          </span>
+                        </div>
+
+                        {/* Bottom content */}
+                        <div className="relative z-10 mt-auto">
+                          <h3 className="text-lg sm:text-xl font-bold font-cyber-header text-white group-hover:text-[#E8FF00] transition-colors line-clamp-2">
+                            {item.name}
+                          </h3>
+                          {item.description && (
+                            <p className="text-white/50 text-xs mt-1.5 line-clamp-2 leading-relaxed font-light font-cyber-data">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -720,39 +802,107 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                 A La Carte Selection
               </h2>
               <div className="grid grid-cols-1 gap-2.5 sm:gap-3.5">
-                {standardItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedItem(item)}
-                    className="w-full flex gap-3 sm:gap-4 p-3.5 sm:p-4 card-premium rounded-xl sm:rounded-2xl hover:border-[#E8FF00]/20 transition-premium items-center text-left press-scale"
-                  >
-                    {item.imageUrl && (
-                      <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 border border-white/5">
-                        <Image
-                          src={item.imageUrl}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          sizes="96px"
-                        />
+                {standardItems.map((item) => {
+                  const itemQuantity = getItemQuantity(item.id);
+                  const itemCartId = getItemCartId(item.id);
+                  
+                  if (itemQuantity > 0) {
+                    return (
+                      <div
+                        key={item.id}
+                        className="w-full flex gap-3 sm:gap-4 p-3.5 sm:p-4 card-premium rounded-xl sm:rounded-2xl border-[#E8FF00]/30 bg-[#E8FF00]/5 items-center"
+                      >
+                        {item.imageUrl && (
+                          <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 border border-white/5">
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                              sizes="96px"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-[15px] sm:text-base md:text-lg text-white font-cyber-header line-clamp-1">
+                              {item.name}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity - 1);
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-lg bg-[#141414] border border-white/5 flex items-center justify-center hover:border-white/15 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="text-lg font-bold w-6 text-center font-cyber-header text-[#E8FF00]">
+                                {itemQuantity}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity + 1);
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-lg bg-[#141414] border border-white/5 flex items-center justify-center hover:border-white/15 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {item.description && (
+                            <p className="text-white/50 text-xs mt-1 line-clamp-2 leading-relaxed font-light font-cyber-data">
+                              {item.description}
+                            </p>
+                          )}
+                          <div className="mt-2.5 font-extrabold text-sm text-[#E8FF00] font-cyber-data">
+                            {formatCurrency(item.price * itemQuantity)}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-[15px] sm:text-base md:text-lg text-white font-cyber-header line-clamp-1">
-                        {item.name}
-                      </h3>
-                      {item.description && (
-                        <p className="text-white/50 text-xs mt-1 line-clamp-2 leading-relaxed font-light font-cyber-data">
-                          {item.description}
-                        </p>
+                    );
+                  }
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedItem(item)}
+                      className="w-full flex gap-3 sm:gap-4 p-3.5 sm:p-4 card-premium rounded-xl sm:rounded-2xl hover:border-[#E8FF00]/20 transition-premium items-center text-left press-scale"
+                    >
+                      {item.imageUrl && (
+                        <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 border border-white/5">
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                            sizes="96px"
+                          />
+                        </div>
                       )}
-                      <div className="mt-2.5 font-extrabold text-sm text-[#E8FF00] font-cyber-data">
-                        {formatCurrency(item.price)}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[15px] sm:text-base md:text-lg text-white font-cyber-header line-clamp-1">
+                          {item.name}
+                        </h3>
+                        {item.description && (
+                          <p className="text-white/50 text-xs mt-1 line-clamp-2 leading-relaxed font-light font-cyber-data">
+                            {item.description}
+                          </p>
+                        )}
+                        <div className="mt-2.5 font-extrabold text-sm text-[#E8FF00] font-cyber-data">
+                          {formatCurrency(item.price)}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -765,34 +915,26 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
           </div>
       </div>
 
-      {/* Sticky Cart Bar */}
+      {/* Floating Cart Button */}
       <AnimatePresence>
         {itemCount() > 0 && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", damping: 28, stiffness: 400 }}
-            className="fixed bottom-0 inset-x-0 z-40 px-4 gpu-accelerate"
-            style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 400 }}
+            onClick={() => setShowCart(true)}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[#E8FF00] hover:bg-[#E8FF00]/95 text-black shadow-2xl shadow-[#E8FF00]/20 border border-white/5 transition-premium font-cyber-data touch-target press-scale"
+            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom) - 1.5rem)" }}
           >
-            <button
-              type="button"
-              onClick={() => setShowCart(true)}
-              className="w-full max-w-lg mx-auto flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-[#E8FF00] active:bg-[#E8FF00]/90 text-black shadow-2xl shadow-[#E8FF00]/20 border border-white/5 transition-premium font-cyber-data touch-target press-scale"
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <ShoppingBag className="w-5 h-5" />
-                  <span className="absolute -top-2.5 -right-2.5 w-5.5 h-5.5 rounded-full bg-black text-[#E8FF00] text-[10px] font-extrabold flex items-center justify-center border border-[#E8FF00]/20 shadow">
-                    {itemCount()}
-                  </span>
-                </div>
-                <span className="font-extrabold tracking-wider text-xs uppercase pl-2">Review Table Order</span>
-              </div>
-              <span className="font-extrabold text-sm">{formatCurrency(total())}</span>
-            </button>
-          </motion.div>
+            <div className="relative">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black text-[#E8FF00] text-[10px] font-extrabold flex items-center justify-center border border-[#E8FF00]/20 shadow">
+                {itemCount()}
+              </span>
+            </div>
+            <span className="font-extrabold text-sm">{formatCurrency(total())}</span>
+          </motion.button>
         )}
       </AnimatePresence>
 
@@ -816,8 +958,8 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
             taxRate={restaurant.taxRate}
             onClose={() => setShowCart(false)}
             onOrderPlaced={(order) => {
-              setActiveOrder(order);
-              localStorage.setItem(`active_order_${restaurant.slug}`, JSON.stringify(order));
+              setActiveOrders(prev => [...prev, order]);
+              localStorage.setItem(`active_orders_${restaurant.slug}`, JSON.stringify([...activeOrders, order]));
             }}
           />
         )}
@@ -983,9 +1125,10 @@ function CartSheet({
                     </div>
                     <button
                       onClick={() => removeItem(item.cartId)}
-                      className="text-xs font-bold text-red-500 hover:text-red-400 transition-colors mt-2 font-cyber-data"
+                      className="text-red-500 hover:text-red-400 transition-colors mt-2 p-1 hover:bg-red-500/10 rounded-lg"
+                      title="Remove item"
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
