@@ -40,7 +40,7 @@ export async function getRestaurantForDashboard(
     where: { slug },
     select: { name: true, slug: true, password: true },
   });
-  return r;
+  return r ? { name: r.name, slug: r.slug, password: r.password } : null;
 }
 
 export async function getMenuCategories(slug: string) {
@@ -308,6 +308,9 @@ export async function createRestaurant(data: {
   address?: string;
   phone?: string;
   password?: string;
+  latitude?: number;
+  longitude?: number;
+  locationRadius?: number;
 }) {
   const restaurant = await prisma.restaurant.create({
     data: {
@@ -319,6 +322,9 @@ export async function createRestaurant(data: {
       address: data.address,
       phone: data.phone,
       password: data.password,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      locationRadius: data.locationRadius || 100,
       taxRate: 0.0875,
       plan: "pro",
       tables: {
@@ -362,6 +368,8 @@ export async function createMenuItem(
     price: number;
     imageUrl?: string;
     categoryId: string;
+    isPopular?: boolean;
+    isTodaySpecial?: boolean;
   }
 ) {
   const restaurant = await prisma.restaurant.findUnique({ where: { slug } });
@@ -380,6 +388,8 @@ export async function createMenuItem(
       categoryId: data.categoryId,
       restaurantId: restaurant.id,
       sortOrder: count,
+      isPopular: data.isPopular || false,
+      isTodaySpecial: data.isTodaySpecial || false,
     },
   });
   return menuItem;

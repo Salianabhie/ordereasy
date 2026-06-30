@@ -1,0 +1,129 @@
+{
+  "common": {
+    "appName": "Ordeasy",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "close": "Cerrar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "menu": "Menú",
+    "orders": "Pedidos",
+    "reservations": "Reservas",
+    "analytics": "Analítica",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "menu": {
+    "title": "Menú",
+    "categories": "Categorías",
+    "items": "Artículos",
+    "addToCart": "Agregar al carrito",
+    "chefsSelection": "Selección del Chef",
+    "todaysSpecial": "Especial de Hoy",
+    "limitedTime": "Oferta por Tiempo Limitado",
+    "signature": "Firma",
+    "special": "Especial",
+    "price": "Precio",
+    "description": "Descripción",
+    "noItems": "No hay artículos disponibles",
+    "customizations": "Personalizaciones"
+  },
+  "cart": {
+    "title": "Tu Carrito",
+    "empty": "Tu carrito está vacío",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto",
+    "checkout": "Pagar",
+    "remove": "Eliminar",
+    "quantity": "Cantidad"
+  },
+  "orders": {
+    "title": "Pedidos",
+    "status": "Estado",
+    "pending": "Pendiente",
+    "preparing": "Preparando",
+    "ready": "Listo",
+    "served": "Servido",
+    "cancelled": "Cancelado",
+    "orderNumber": "Pedido #",
+    "table": "Mesa",
+    "time": "Hora",
+    "total": "Total"
+  },
+  "reservations": {
+    "title": "Reservas",
+    "bookTable": "Reservar Mesa",
+    "selectDate": "Seleccionar Fecha",
+    "selectTime": "Seleccionar Hora",
+    "partySize": "Tamaño del Grupo",
+    "guests": "invitados",
+    "specialRequests": "Solicitudes Especiales",
+    "confirm": "Confirmar Reserva",
+    "waitlist": "Lista de Espera",
+    "joinWaitlist": "Unirse a la Lista",
+    "estimatedTime": "Tiempo Estimado",
+    "position": "Tu Posición",
+    "tableReady": "¡Tu mesa está lista!",
+    "notifyMe": "Notificarme"
+  },
+  "voice": {
+    "title": "Pedido por Voz",
+    "start": "Toca para hablar",
+    "listening": "Escuchando...",
+    "processing": "Procesando...",
+    "error": "No se pudo entender. Por favor intenta de nuevo.",
+    "tip": "Di algo como \"Quiero una hamburguesa con papas\""
+  },
+  "recommendations": {
+    "title": "Recomendado para Ti",
+    "basedOnHistory": "Basado en tu historial de pedidos",
+    "tryThis": "También te podría gustar",
+    "popular": "Popular"
+  },
+  "promotions": {
+    "title": "Ofertas Especiales",
+    "happyHour": "Happy Hour",
+    "limitedTime": "Tiempo Limitado",
+    "discount": "Descuento",
+    "off": "DTO",
+    "endsIn": "Termina en"
+  },
+  "dashboard": {
+    "overview": "Resumen",
+    "revenue": "Ingresos",
+    "orders": "Pedidos",
+    "customers": "Clientes",
+    "avgOrder": "Promedio",
+    "menu": "Gestión de Menú",
+    "tables": "Mesas",
+    "reservations": "Reservas",
+    "waitlist": "Lista de Espera",
+    "promotions": "Promociones",
+    "analytics": "Analítica",
+    "aiOptimization": "Optimización de Menú con IA"
+  },
+  "ai": {
+    "menuOptimization": "Optimización de Menú",
+    "priceSuggestions": "Sugerencias de Precio",
+    "demandPrediction": "Predicción de Demanda",
+    "recommendation": "Recomendación IA",
+    "increasePrice": "Considera aumentar el precio",
+    "decreasePrice": "Considera disminuir el precio",
+    "promote": "Promocionar este artículo",
+    "discontinue": "Considera discontinuar",
+    "reason": "Razón"
+  }
+}

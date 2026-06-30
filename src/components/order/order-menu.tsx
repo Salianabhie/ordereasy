@@ -18,11 +18,20 @@ import {
   Utensils,
   Check,
   Trash2,
+  AlertTriangle,
+  RefreshCw,
+  Calendar,
+  Mic,
+  Globe,
+  Lightbulb,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { UpsellSuggestion } from "@/lib/upsell-engine";
+import { getUserLocation, isWithinRadius } from "@/lib/geolocation";
+import { ReservationModal } from "@/components/order/reservation-modal";
+import { VoiceOrder } from "@/components/order/voice-order";
 
 interface CustomizationGroup {
   id: string;
@@ -39,6 +48,7 @@ interface MenuItem {
   price: number;
   imageUrl: string | null;
   isPopular: boolean;
+  isTodaySpecial: boolean;
   tags: string;
   customizationGroups: CustomizationGroup[];
 }
@@ -60,6 +70,9 @@ interface Restaurant {
   taxRate: number;
   address?: string | null;
   phone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationRadius?: number;
   categories: Category[];
 }
 
@@ -417,6 +430,9 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
   const { total, itemCount, setContext, getItemQuantity, getItemCartId, updateQuantity, addItem } = useCartStore();
   const [showCart, setShowCart] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [locationVerified, setLocationVerified] = useState<boolean | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const [activeOrders, setActiveOrders] = useState<PlacedOrderTracker[]>(() => {
     if (typeof window === "undefined") return [];
     const stored = localStorage.getItem(`active_orders_${restaurant.slug}`);
@@ -429,10 +445,61 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
     }
     return [];
   });
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [language, setLanguage] = useState("en");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setContext(restaurant.slug, tableNumber);
   }, [restaurant.slug, tableNumber, setContext]);
+
+  // Check user location if restaurant has location restrictions
+  useEffect(() => {
+    if (!restaurant.latitude || !restaurant.longitude) {
+      setLocationVerified(true); // No location restriction set
+      return;
+    }
+
+    const checkLocation = async () => {
+      setIsCheckingLocation(true);
+      setLocationError(null);
+
+      try {
+        const position = await getUserLocation();
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
+
+        if (restaurant.latitude && restaurant.longitude) {
+          const withinRadius = isWithinRadius(
+            userLat,
+            userLon,
+            restaurant.latitude,
+            restaurant.longitude,
+            restaurant.locationRadius ?? 100
+          );
+
+          setLocationVerified(withinRadius);
+          
+          if (!withinRadius) {
+            setLocationError("You are outside the restaurant's service area. This app can only be used within the restaurant premises.");
+          }
+        } else {
+          setLocationVerified(true);
+        }
+      } catch (error) {
+        setLocationError(error instanceof Error ? error.message : "Failed to verify location");
+        setLocationVerified(false);
+      } finally {
+        setIsCheckingLocation(false);
+      }
+    };
+
+    checkLocation();
+  }, [restaurant.latitude, restaurant.longitude, restaurant.locationRadius]);
 
   // Poll order status for active orders
   useEffect(() => {
@@ -479,9 +546,33 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
     restaurant.categories.find((c) => c.slug === activeCategory)?.menuItems ??
     [];
 
-  // Separate popular (featured) and standard items
-  const featuredItems = activeItems.filter((i) => i.isPopular);
-  const standardItems = activeItems.filter((i) => !i.isPopular);
+  // Separate today's special, popular (featured) and standard items
+  const todaySpecialItems = activeItems.filter((i) => i.isTodaySpecial);
+  const featuredItems = activeItems.filter((i) => i.isPopular && !i.isTodaySpecial);
+  const standardItems = activeItems.filter((i) => !i.isPopular && !i.isTodaySpecial);
+
+  // Block access if location verification failed
+  if (locationVerified === false) {
+    return (
+      <div className="min-h-screen-safe bg-cyber-mesh text-white font-sans flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="flex items-start gap-3 p-6 bg-red-500/10 border border-red-500/30 rounded-2xl">
+            <AlertTriangle className="w-6 h-6 text-red-400 shrink-0 mt-1" />
+            <div className="flex-1">
+              <h4 className="text-red-400 font-bold text-lg mb-2">Location Restricted</h4>
+              <p className="text-white/60 text-sm leading-relaxed mb-4">{locationError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-400 text-sm font-medium transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen-safe bg-cyber-mesh text-white font-sans">
@@ -505,6 +596,31 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
           style={{ top: "max(1rem, env(safe-area-inset-top))", right: "max(1rem, env(safe-area-inset-right))" }}
         >
           Table {tableNumber}
+        </div>
+
+        <div
+          className="absolute z-20 flex gap-2"
+          style={{ top: "max(1rem, env(safe-area-inset-top))", left: "max(1rem, env(safe-area-inset-left))" }}
+        >
+          <button
+            onClick={() => setShowReservationModal(true)}
+            className="glass-cyber rounded-xl px-3 py-2 border border-white/20 text-white/70 hover:text-white hover:border-white/30 transition-all"
+            title="Reserve a table"
+          >
+            <Calendar className="w-4 h-4" />
+          </button>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="glass-cyber rounded-xl px-2 py-2 border border-white/20 text-white/70 bg-transparent text-xs"
+          >
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="zh">ZH</option>
+            <option value="ja">JA</option>
+          </select>
         </div>
 
         <div className="absolute bottom-0 inset-x-0 px-4 sm:p-6 z-10 flex flex-col justify-end pb-4 sm:pb-6">
@@ -635,6 +751,282 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
                 </div>
               ))}
             </div>
+        </div>
+      )}
+
+      {/* Location Verification */}
+      <AnimatePresence>
+        {isCheckingLocation && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-4 py-3 max-w-2xl mx-auto"
+          >
+            <div className="flex items-center gap-3 p-3 bg-[#0F0F0F] border border-[#E8FF00]/30 rounded-xl">
+              <RefreshCw className="w-5 h-5 text-[#E8FF00] animate-spin" />
+              <span className="text-white/70 text-sm">Verifying your location...</span>
+            </div>
+          </motion.div>
+        )}
+
+        {!locationVerified && locationError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-4 py-3 max-w-2xl mx-auto"
+          >
+            <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-red-400 font-bold text-sm mb-1">Location Restricted</h4>
+                <p className="text-white/60 text-xs leading-relaxed">{locationError}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-3 text-xs text-red-400 hover:text-red-300 font-medium"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Today's Special Section */}
+      {todaySpecialItems.length > 0 && (
+        <div className="px-4 py-6 max-w-2xl mx-auto">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 via-red-500/10 to-orange-500/20 rounded-3xl blur-xl" />
+            <div className="relative bg-gradient-to-br from-orange-500/10 to-red-500/5 border border-orange-500/30 rounded-3xl p-5 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500 rounded-full blur-md animate-pulse" />
+                  <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                    <span className="text-white text-lg">🔥</span>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-extrabold font-cyber-header text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">
+                    Today's Special
+                  </h2>
+                  <p className="text-[10px] text-orange-300/70 uppercase tracking-wider">Limited Time Offer</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {todaySpecialItems.map((item) => {
+                  const itemQuantity = getItemQuantity(item.id);
+                  const itemCartId = getItemCartId(item.id);
+                  
+                  if (itemQuantity > 0) {
+                    return (
+                      <div
+                        key={item.id}
+                        className="group w-full relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 flex flex-col justify-between min-h-[180px] overflow-hidden"
+                      >
+                        {item.imageUrl && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            <Image
+                              src={item.imageUrl}
+                              alt=""
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-30"
+                              sizes="380px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/90 to-transparent" />
+                          </div>
+                        )}
+                        
+                        <div className="relative z-10 flex justify-between items-start">
+                          <span className="px-2 py-1 rounded bg-orange-500 text-white text-[9px] font-bold uppercase tracking-wider">
+                            Special
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (itemCartId) {
+                                  updateQuantity(itemCartId, itemQuantity - 1);
+                                }
+                              }}
+                              className="w-7 h-7 rounded-lg bg-black/50 border border-white/10 flex items-center justify-center hover:border-orange-500/50 transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-base font-bold w-5 text-center text-orange-400">
+                              {itemQuantity}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (itemCartId) {
+                                  updateQuantity(itemCartId, itemQuantity + 1);
+                                }
+                              }}
+                              className="w-7 h-7 rounded-lg bg-black/50 border border-white/10 flex items-center justify-center hover:border-orange-500/50 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 mt-auto">
+                          <h3 className="text-base font-bold text-white group-hover:text-orange-400 transition-colors line-clamp-2">
+                            {item.name}
+                          </h3>
+                          <div className="mt-2 font-extrabold text-sm text-orange-400">
+                            {formatCurrency(item.price * itemQuantity)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedItem(item)}
+                      className="group w-full relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/10 to-red-500/5 border border-orange-500/20 hover:border-orange-500/40 transition-all flex flex-col justify-between min-h-[180px] overflow-hidden text-left"
+                    >
+                      {item.imageUrl && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          <Image
+                            src={item.imageUrl}
+                            alt=""
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-30"
+                            sizes="380px"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F0F] via-[#0F0F0F]/90 to-transparent" />
+                        </div>
+                      )}
+                      
+                      <div className="relative z-10 flex justify-between items-start">
+                        <span className="px-2 py-1 rounded bg-orange-500 text-white text-[9px] font-bold uppercase tracking-wider">
+                          Special
+                        </span>
+                        <span className="text-orange-400 font-bold text-xs px-2 py-1 rounded-lg bg-black/30 border border-orange-500/20">
+                          {formatCurrency(item.price)}
+                        </span>
+                      </div>
+
+                      <div className="relative z-10 mt-auto">
+                        <h3 className="text-base font-bold text-white group-hover:text-orange-400 transition-colors line-clamp-2">
+                          {item.name}
+                        </h3>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Recommendations Section */}
+      {mounted && (
+        <div className="px-4 py-6 max-w-2xl mx-auto">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#E8FF00]/10 via-purple-500/5 to-[#E8FF00]/10 rounded-3xl blur-xl" />
+            <div className="relative bg-gradient-to-br from-[#E8FF00]/5 to-purple-500/5 border border-[#E8FF00]/30 rounded-3xl p-5 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-[#E8FF00] rounded-full blur-md animate-pulse" />
+                  <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-[#E8FF00] to-purple-500 flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-black" />
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-extrabold font-cyber-header text-transparent bg-clip-text bg-gradient-to-r from-[#E8FF00] to-purple-400">
+                    Recommended for You
+                  </h2>
+                  <p className="text-[10px] text-[#E8FF00]/70 uppercase tracking-wider">AI-Powered Suggestions</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {standardItems.slice(0, 4).map((item) => {
+                  const itemQuantity = getItemQuantity(item.id);
+                  const itemCartId = getItemCartId(item.id);
+                  
+                  if (itemQuantity > 0) {
+                    return (
+                      <div
+                        key={item.id}
+                        className="group w-full relative rounded-2xl p-4 bg-gradient-to-br from-[#E8FF00]/20 to-purple-500/10 border border-[#E8FF00]/30 flex flex-col justify-between min-h-[180px] overflow-hidden"
+                      >
+                        <div className="relative z-10 flex justify-between items-start">
+                          <span className="px-2 py-1 rounded bg-[#E8FF00] text-black text-[9px] font-bold uppercase tracking-wider">
+                            Recommended
+                          </span>
+                        </div>
+                        <div className="relative z-10 mt-auto">
+                          <h3 className="font-bold text-white text-sm mb-1">{item.name}</h3>
+                          <p className="text-white/60 text-xs mb-3 line-clamp-2">{item.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#E8FF00]">{formatCurrency(item.price)}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity - 1);
+                                  }
+                                }}
+                                className="w-7 h-7 rounded-lg bg-black/50 border border-white/10 flex items-center justify-center hover:border-[#E8FF00]/50 transition-colors"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="text-base font-bold w-5 text-center text-[#E8FF00]">
+                                {itemQuantity}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (itemCartId) {
+                                    updateQuantity(itemCartId, itemQuantity + 1);
+                                  }
+                                }}
+                                className="w-7 h-7 rounded-lg bg-[#E8FF00] text-black flex items-center justify-center hover:bg-[#E8FF00]/90 transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className="group w-full relative rounded-2xl p-4 bg-gradient-to-br from-[#E8FF00]/10 to-purple-500/5 border border-[#E8FF00]/20 flex flex-col justify-between min-h-[180px] overflow-hidden cursor-pointer hover:border-[#E8FF00]/40 transition-all"
+                    >
+                      <div className="relative z-10 flex justify-between items-start">
+                        <span className="px-2 py-1 rounded bg-[#E8FF00]/20 text-[#E8FF00] text-[9px] font-bold uppercase tracking-wider border border-[#E8FF00]/30">
+                          Recommended
+                        </span>
+                      </div>
+                      <div className="relative z-10 mt-auto">
+                        <h3 className="font-bold text-white text-sm mb-1">{item.name}</h3>
+                        <p className="text-white/60 text-xs mb-3 line-clamp-2">{item.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-white">{formatCurrency(item.price)}</span>
+                          <button className="w-8 h-8 rounded-lg bg-[#E8FF00] text-black flex items-center justify-center hover:bg-[#E8FF00]/90 transition-colors">
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -938,6 +1330,14 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
         )}
       </AnimatePresence>
 
+      {/* Voice Order Button */}
+      <div className="fixed bottom-6 left-6 z-50" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+        <VoiceOrder onOrderRecognized={(text) => {
+          console.log("Voice order:", text);
+          // TODO: Implement voice-to-cart parsing
+        }} />
+      </div>
+
       {/* Item Customization Modal */}
       <AnimatePresence>
         {selectedItem && (
@@ -964,6 +1364,13 @@ export function OrderMenu({ restaurant, tableNumber }: OrderMenuProps) {
           />
         )}
       </AnimatePresence>
+
+      {/* Reservation Modal */}
+      <ReservationModal
+        isOpen={showReservationModal}
+        onClose={() => setShowReservationModal(false)}
+        restaurantSlug={restaurant.slug}
+      />
     </div>
   );
 }

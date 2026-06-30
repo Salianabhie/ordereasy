@@ -21,7 +21,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "OrderEasy — The Restaurant Growth Operating System",
+  title: "Ordeasy — The Restaurant Growth Operating System",
   description:
     "An intelligent restaurant operating system that increases profit, reduces manual work, speeds up service, and modernizes restaurant operations.",
 };

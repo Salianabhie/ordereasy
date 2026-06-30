@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChefHat, ArrowRight, Store, MapPin, Phone, FileText, Globe, AlertCircle, Lock } from "lucide-react";
+import { ChefHat, ArrowRight, Store, MapPin, Phone, FileText, Globe, AlertCircle, Lock, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const IMAGE_PRESETS = [
@@ -40,9 +40,38 @@ export default function SignupPage() {
     phone: "",
     password: "",
     coverUrl: IMAGE_PRESETS[0].url,
+    latitude: null as number | null,
+    longitude: null as number | null,
+    locationRadius: 100,
   });
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
+  const handleGetLocation = () => {
+    setIsGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData((prev) => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }));
+          setIsGettingLocation(false);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setError("Failed to get location. Please enter manually.");
+          setIsGettingLocation(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setError("Geolocation is not supported by your browser.");
+      setIsGettingLocation(false);
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +140,7 @@ export default function SignupPage() {
           <div className="w-10 h-10 rounded-xl bg-[#E8FF00] flex items-center justify-center text-black shadow-lg shadow-[#E8FF00]/10 animate-wiggle">
             <ChefHat className="w-5 h-5" />
           </div>
-          <span className="font-bold text-xl tracking-tight font-cyber-header text-white text-cyber-glow">OrderEasy</span>
+          <span className="font-bold text-xl tracking-tight font-cyber-header text-white text-cyber-glow">Ordeasy</span>
         </div>
 
         <div className="text-center mb-10">
@@ -158,7 +187,7 @@ export default function SignupPage() {
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-4 text-white/40 text-xs select-none font-cyber-data">
-                  ordereasy.com/
+                  ordeasy.com/
                 </span>
                 <input
                   type="text"
@@ -219,6 +248,71 @@ export default function SignupPage() {
                 className="w-full px-4.5 py-3 rounded-xl bg-[#141414] border border-white/5 focus:outline-none focus:border-[#E8FF00] focus:ring-1 focus:ring-[#E8FF00]/25 transition-all text-sm text-white placeholder-white/20 font-cyber-data"
               />
             </div>
+          </div>
+
+          {/* Location Settings */}
+          <div className="space-y-4 p-4 rounded-xl bg-[#141414]/50 border border-white/5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5 font-cyber-header">
+                <Crosshair className="w-3.5 h-3.5 text-[#E8FF00]" /> Location Restriction
+              </label>
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={isGettingLocation}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#E8FF00]/10 hover:bg-[#E8FF00]/20 text-[#E8FF00] border border-[#E8FF00]/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {isGettingLocation ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-[#E8FF00] border-t-transparent rounded-full animate-spin" />
+                    Detecting...
+                  </>
+                ) : (
+                  <>
+                    <Crosshair className="w-3 h-3" />
+                    Auto-detect
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-white/40">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.latitude || ""}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, latitude: e.target.value ? parseFloat(e.target.value) : null }))}
+                  placeholder="Auto-detect or enter"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0F0F0F] border border-white/5 focus:outline-none focus:border-[#E8FF00] text-xs text-white placeholder-white/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-white/40">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.longitude || ""}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, longitude: e.target.value ? parseFloat(e.target.value) : null }))}
+                  placeholder="Auto-detect or enter"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0F0F0F] border border-white/5 focus:outline-none focus:border-[#E8FF00] text-xs text-white placeholder-white/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-wider text-white/40">Radius (meters)</label>
+                <input
+                  type="number"
+                  value={formData.locationRadius}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, locationRadius: parseInt(e.target.value) || 100 }))}
+                  placeholder="100"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0F0F0F] border border-white/5 focus:outline-none focus:border-[#E8FF00] text-xs text-white placeholder-white/20"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-white/30">
+              Restrict app usage to customers within this radius of your restaurant location. Leave empty to disable location restriction.
+            </p>
           </div>
 
           {/* Password */}

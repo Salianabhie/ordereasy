@@ -99,6 +99,6 @@ export const useCartStore = create<CartStore>()(
         return item?.cartId || null;
       },
     }),
-    { name: "ordereasy-cart" }
+    { name: "ordeasy-cart" }
   )
 );

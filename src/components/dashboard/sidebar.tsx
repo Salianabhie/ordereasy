@@ -12,6 +12,9 @@ import {
   Settings,
   Table2,
   X,
+  Users,
+  Tag,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -22,6 +25,9 @@ const navItems = [
   { href: "/kitchen", label: "Kitchen", icon: Monitor },
   { href: "/menu", label: "Menu", icon: Menu },
   { href: "/tables", label: "Tables", icon: Table2 },
+  { href: "/waitlist", label: "Waitlist", icon: Users },
+  { href: "/promotions", label: "Promotions", icon: Tag },
+  { href: "/ai-optimization", label: "AI Insights", icon: Lightbulb },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/billing", label: "Billing", icon: CreditCard },
 ];
@@ -49,7 +55,7 @@ function NavContent({
             <ChefHat className="w-4.5 h-4.5" />
           </div>
           <div>
-            <div className="font-bold text-sm tracking-tight text-white font-cyber-header">OrderEasy</div>
+            <div className="font-bold text-sm tracking-tight text-white font-cyber-header">Ordeasy</div>
             <div className="text-[10px] text-white/40 truncate max-w-[140px] uppercase tracking-widest font-bold">
               {restaurantName}
             </div>

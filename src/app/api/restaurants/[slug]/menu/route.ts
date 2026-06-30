@@ -10,7 +10,7 @@ export async function POST(
   try {
     const { slug } = await params;
     const body = await request.json();
-    const { name, description, price, imageUrl, categoryId } = body;
+    const { name, description, price, imageUrl, categoryId, isPopular, isTodaySpecial } = body;
 
     if (!name || price === undefined || !categoryId) {
       return NextResponse.json(
@@ -33,6 +33,8 @@ export async function POST(
       price: parsedPrice,
       imageUrl: imageUrl || undefined,
       categoryId,
+      isPopular: isPopular === true,
+      isTodaySpecial: isTodaySpecial === true,
     });
 
     if (!menuItem) {

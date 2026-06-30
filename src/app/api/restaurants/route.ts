@@ -4,7 +4,7 @@ import { getRestaurantBySlug, createRestaurant } from "@/lib/data";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, slug, description, address, phone, logoUrl, coverUrl, password } = body;
+    const { name, slug, description, address, phone, logoUrl, coverUrl, password, latitude, longitude, locationRadius } = body;
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       logoUrl: logoUrl || undefined,
       coverUrl: coverUrl || undefined,
       password: password || undefined,
+      latitude: latitude || undefined,
+      longitude: longitude || undefined,
+      locationRadius: locationRadius || 100,
     });
 
     return NextResponse.json({ success: true, restaurant }, { status: 201 });

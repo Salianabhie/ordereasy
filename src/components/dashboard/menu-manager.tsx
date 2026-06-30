@@ -34,6 +34,7 @@ interface MenuItem {
   imageUrl: string | null;
   isAvailable: boolean;
   isPopular: boolean;
+  isTodaySpecial: boolean;
   sortOrder: number;
 }
 
@@ -133,6 +134,11 @@ function SortableItem({ item, onDelete, onEdit }: { item: MenuItem; onDelete: (i
             {item.isPopular && (
               <Star className="w-3.5 h-3.5 text-[#E8FF00] fill-[#E8FF00] shrink-0" />
             )}
+            {item.isTodaySpecial && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 font-medium shrink-0">
+                Special
+              </span>
+            )}
           </div>
           {item.description && (
             <div className="text-xs text-white/35 truncate font-light mt-0.5">
@@ -191,12 +197,16 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
     price: "",
     imageUrl: "",
     categoryId: activeCategory,
+    isPopular: false,
+    isTodaySpecial: false,
   });
   const [editForm, setEditForm] = useState({
     name: "",
     description: "",
     price: "",
     imageUrl: "",
+    isPopular: false,
+    isTodaySpecial: false,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -317,6 +327,7 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
         imageUrl: data.menuItem.imageUrl,
         isAvailable: data.menuItem.isAvailable !== false,
         isPopular: data.menuItem.isPopular === true,
+        isTodaySpecial: data.menuItem.isTodaySpecial === true,
         sortOrder: data.menuItem.sortOrder ?? 0,
       };
 
@@ -338,6 +349,8 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
         price: "",
         imageUrl: "",
         categoryId: activeCategory,
+        isPopular: false,
+        isTodaySpecial: false,
       });
       setShowItemModal(false);
     } catch (err: unknown) {
@@ -386,6 +399,8 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
       description: item.description || "",
       price: item.price.toString(),
       imageUrl: item.imageUrl || "",
+      isPopular: item.isPopular,
+      isTodaySpecial: item.isTodaySpecial,
     });
     setShowEditModal(true);
   };
@@ -439,7 +454,7 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
 
       setShowEditModal(false);
       setItemToEdit(null);
-      setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+      setEditForm({ name: "", description: "", price: "", imageUrl: "", isPopular: false, isTodaySpecial: false });
     } catch (err: unknown) {
       console.error(err);
       setFormError(err instanceof Error ? err.message : "Failed to update menu item");
@@ -752,6 +767,33 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:border-[#E8FF00]/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={itemForm.isPopular}
+                      onChange={(e) => setItemForm((prev) => ({ ...prev, isPopular: e.target.checked }))}
+                      className="w-4 h-4 rounded border-white/20 bg-white/5 text-[#E8FF00] focus:ring-[#E8FF00]/50"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-white">Chef's Selection</div>
+                      <div className="text-[10px] text-white/40">Featured item</div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:border-orange-500/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={itemForm.isTodaySpecial}
+                      onChange={(e) => setItemForm((prev) => ({ ...prev, isTodaySpecial: e.target.checked }))}
+                      className="w-4 h-4 rounded border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500/50"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-white">Today's Special</div>
+                      <div className="text-[10px] text-white/40">Limited time</div>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="pt-4 flex justify-end gap-3">
                   <button
                     type="button"
@@ -842,7 +884,7 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
               onClick={() => {
                 setShowEditModal(false);
                 setItemToEdit(null);
-                setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+                setEditForm({ name: "", description: "", price: "", imageUrl: "", isPopular: false, isTodaySpecial: false });
               }}
             />
             <motion.div
@@ -857,7 +899,7 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
                   onClick={() => {
                     setShowEditModal(false);
                     setItemToEdit(null);
-                    setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+                    setEditForm({ name: "", description: "", price: "", imageUrl: "", isPopular: false, isTodaySpecial: false });
                   }}
                   className="text-white/40 hover:text-white/70"
                 >
@@ -925,13 +967,40 @@ export function MenuManager({ slug, categories: initialCategories }: MenuManager
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:border-[#E8FF00]/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={editForm.isPopular}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, isPopular: e.target.checked }))}
+                      className="w-4 h-4 rounded border-white/20 bg-white/5 text-[#E8FF00] focus:ring-[#E8FF00]/50"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-white">Chef's Selection</div>
+                      <div className="text-[10px] text-white/40">Featured item</div>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:border-orange-500/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={editForm.isTodaySpecial}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, isTodaySpecial: e.target.checked }))}
+                      className="w-4 h-4 rounded border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500/50"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-white">Today's Special</div>
+                      <div className="text-[10px] text-white/40">Limited time</div>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="pt-4 flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setItemToEdit(null);
-                      setEditForm({ name: "", description: "", price: "", imageUrl: "" });
+                      setEditForm({ name: "", description: "", price: "", imageUrl: "", isPopular: false, isTodaySpecial: false });
                     }}
                     className="px-4 py-2 text-sm font-medium text-white/45 hover:text-white/70"
                   >

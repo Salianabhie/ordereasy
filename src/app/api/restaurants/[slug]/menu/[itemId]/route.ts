@@ -9,7 +9,7 @@ export async function PATCH(
   try {
     const { slug, itemId } = await params;
     const body = await request.json();
-    const { name, description, price, imageUrl } = body;
+    const { name, description, price, imageUrl, isPopular, isTodaySpecial } = body;
 
     if (!isFirebaseEnabled()) {
       const restaurant = await prisma.restaurant.findUnique({
@@ -42,6 +42,8 @@ export async function PATCH(
       if (description !== undefined) updateData.description = description;
       if (price !== undefined) updateData.price = parseFloat(price);
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (isPopular !== undefined) updateData.isPopular = isPopular;
+      if (isTodaySpecial !== undefined) updateData.isTodaySpecial = isTodaySpecial;
 
       const updatedItem = await prisma.menuItem.update({
         where: { id: itemId },
@@ -73,6 +75,8 @@ export async function PATCH(
       if (description !== undefined) updateData.description = description;
       if (price !== undefined) updateData.price = parseFloat(price);
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (isPopular !== undefined) updateData.isPopular = isPopular;
+      if (isTodaySpecial !== undefined) updateData.isTodaySpecial = isTodaySpecial;
 
       await menuItemRef.update(updateData);
       const updatedDoc = await menuItemRef.get();

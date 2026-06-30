@@ -20,6 +20,7 @@ export interface MenuItem {
   imageUrl: string | null;
   isAvailable: boolean;
   isPopular: boolean;
+  isTodaySpecial: boolean;
   prepTime: number;
   sortOrder: number;
   tags: string;
@@ -57,6 +58,9 @@ export interface Restaurant {
   currency: string;
   taxRate: number;
   plan: string;
+  latitude: number | null;
+  longitude: number | null;
+  locationRadius: number;
   categories: Category[];
   tables: Table[];
 }

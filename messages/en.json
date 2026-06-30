@@ -1,0 +1,129 @@
+{
+  "common": {
+    "appName": "Ordeasy",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close"
+  },
+  "nav": {
+    "home": "Home",
+    "menu": "Menu",
+    "orders": "Orders",
+    "reservations": "Reservations",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "menu": {
+    "title": "Menu",
+    "categories": "Categories",
+    "items": "Items",
+    "addToCart": "Add to Cart",
+    "chefsSelection": "Chef's Selection",
+    "todaysSpecial": "Today's Special",
+    "limitedTime": "Limited Time Offer",
+    "signature": "Signature",
+    "special": "Special",
+    "price": "Price",
+    "description": "Description",
+    "noItems": "No items available",
+    "customizations": "Customizations"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "orders": {
+    "title": "Orders",
+    "status": "Status",
+    "pending": "Pending",
+    "preparing": "Preparing",
+    "ready": "Ready",
+    "served": "Served",
+    "cancelled": "Cancelled",
+    "orderNumber": "Order #",
+    "table": "Table",
+    "time": "Time",
+    "total": "Total"
+  },
+  "reservations": {
+    "title": "Reservations",
+    "bookTable": "Book a Table",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "partySize": "Party Size",
+    "guests": "guests",
+    "specialRequests": "Special Requests",
+    "confirm": "Confirm Reservation",
+    "waitlist": "Waitlist",
+    "joinWaitlist": "Join Waitlist",
+    "estimatedTime": "Estimated Wait",
+    "position": "Your Position",
+    "tableReady": "Your table is ready!",
+    "notifyMe": "Notify Me"
+  },
+  "voice": {
+    "title": "Voice Order",
+    "start": "Tap to speak",
+    "listening": "Listening...",
+    "processing": "Processing...",
+    "error": "Could not understand. Please try again.",
+    "tip": "Say something like \"I want a burger with fries\""
+  },
+  "recommendations": {
+    "title": "Recommended for You",
+    "basedOnHistory": "Based on your order history",
+    "tryThis": "You might also like",
+    "popular": "Popular"
+  },
+  "promotions": {
+    "title": "Special Offers",
+    "happyHour": "Happy Hour",
+    "limitedTime": "Limited Time",
+    "discount": "Discount",
+    "off": "OFF",
+    "endsIn": "Ends in"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "customers": "Customers",
+    "avgOrder": "Avg Order",
+    "menu": "Menu Management",
+    "tables": "Tables",
+    "reservations": "Reservations",
+    "waitlist": "Waitlist",
+    "promotions": "Promotions",
+    "analytics": "Analytics",
+    "aiOptimization": "AI Menu Optimization"
+  },
+  "ai": {
+    "menuOptimization": "Menu Optimization",
+    "priceSuggestions": "Price Suggestions",
+    "demandPrediction": "Demand Prediction",
+    "recommendation": "AI Recommendation",
+    "increasePrice": "Consider increasing price",
+    "decreasePrice": "Consider decreasing price",
+    "promote": "Promote this item",
+    "discontinue": "Consider discontinuing",
+    "reason": "Reason"
+  }
+}

@@ -30,7 +30,7 @@ const features = [
   {
     icon: Flame,
     title: "Kitchen Display",
-    description: "Live Firebase-powered order queue. Zero miscommunication.",
+    description: "Live real-time order queue. Zero miscommunication.",
     accent: "bg-[#3DD68C]/10 text-[#3DD68C] border-[#3DD68C]/20",
   },
   {
@@ -88,7 +88,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#E8FF00] flex items-center justify-center text-black shadow-lg shadow-[#E8FF00]/15">
               <ChefHat className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </div>
-            <span className="font-bold text-base sm:text-lg tracking-tight font-cyber-header text-white text-cyber-glow">OrderEasy</span>
+            <span className="font-bold text-base sm:text-lg tracking-tight font-cyber-header text-white text-cyber-glow">Ordeasy</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/60 font-medium font-cyber-data">
             <a href="#features" className="hover:text-[#E8FF00] transition-colors">Features</a>
@@ -226,8 +226,8 @@ export default function LandingPage() {
             transition={{ delay: 0.16, duration: 0.45 }}
             className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed font-cyber-data px-2"
           >
-            OrderEasy automates ordering, eliminates errors, and grows revenue —
-            powered by Firebase real-time sync and AI upselling. Not just a QR menu.
+            Ordeasy automates ordering, eliminates errors, and grows revenue —
+            powered by real-time sync and AI upselling. Not just a QR menu.
           </motion.p>
 
           <motion.div
@@ -289,14 +289,14 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-green-500/60" />
               </div>
               <div className="flex-1 text-center text-xs text-white/30 font-mono">
-                dashboard.ordereasy.com/bella-vista
+                dashboard.ordeasy.com/bella-vista
               </div>
             </div>
             <div className="bg-[#0F0F0F] p-8 md:p-10">
               <div className="grid md:grid-cols-3 gap-4 mb-6">
                 {[
                   { label: "Today's Revenue", value: "$4,280", change: "+12.5%", color: "text-[#3DD68C]" },
-                  { label: "Live Orders", value: "8", change: "Firebase sync", color: "text-[#E8FF00]" },
+                  { label: "Live Orders", value: "8", change: "Real-time sync", color: "text-[#E8FF00]" },
                   { label: "Avg Order", value: "$52.40", change: "+8.2%", color: "text-[#3DD68C]" },
                 ].map((card) => (
                   <div
@@ -386,7 +386,7 @@ export default function LandingPage() {
                 name: "Pro",
                 price: "$149",
                 description: "Growing restaurants that want the full stack",
-                features: ["Unlimited tables", "Firebase real-time sync", "AI upselling", "Advanced analytics", "Auto billing", "Priority support"],
+                features: ["Unlimited tables", "Real-time sync", "AI upselling", "Advanced analytics", "Auto billing", "Priority support"],
                 popular: true,
               },
             ].map((plan) => (
@@ -457,7 +457,7 @@ export default function LandingPage() {
               Ready to modernize? 🍽️
             </h2>
             <p className="text-white/60 text-lg mb-8 max-w-lg mx-auto font-cyber-data">
-              Join restaurants using OrderEasy to serve faster, sell more, and stress less.
+              Join restaurants using Ordeasy to serve faster, sell more, and stress less.
             </p>
             <Link href="/bella-vista/order?table=5">
               <Button
@@ -473,7 +473,7 @@ export default function LandingPage() {
                 <Clock className="w-4 h-4 text-[#E8FF00]" /> 5-min setup
               </span>
               <span className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-[#E8FF00]" /> Firebase-backed
+                <Shield className="w-4 h-4 text-[#E8FF00]" /> Cloud-backed
               </span>
             </div>
           </div>
@@ -490,10 +490,10 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-[#E8FF00] flex items-center justify-center text-black">
               <ChefHat className="w-4.5 h-4.5" />
             </div>
-            <span className="font-bold text-white font-cyber-header">OrderEasy</span>
+            <span className="font-bold text-white font-cyber-header">Ordeasy</span>
           </div>
           <p className="text-xs text-white/40 font-cyber-data">
-            © 2026 OrderEasy · The restaurant growth operating system
+            © 2026 Ordeasy · The restaurant growth operating system
           </p>
         </div>
       </footer>
